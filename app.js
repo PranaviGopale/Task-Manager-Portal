@@ -182,6 +182,7 @@ app.get('/', (req, res) => {
 });
 
 
+// This tells the app to use the port Railway provides, OR 8080 if running locally
 const port = process.env.PORT || 8080;
 
 app.listen(port, "0.0.0.0", () => {
