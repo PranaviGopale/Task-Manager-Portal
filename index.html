@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task App System</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; background: #eef2f5; margin: 30px; }
+.myBox { background: #ffffff; padding: 20px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #bbbbbb; max-width: 380px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+.myBox:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+.hidden-element { display: none !important; }
+input, select { width: 92%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 4px; }
+button { padding: 10px 20px; background: #2563eb; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
+button:hover { background: #1d4ed8; }
+.workspace { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 700px; animation: fadeIn 0.4s ease-in-out; }
+
+/* ANIMATION TIMINGS */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.link-text { color: #2563eb; cursor: pointer; font-size: 13px; text-decoration: underline; margin-top: 8px; display: inline-block; }
+
+/* STATS ANLYTICS COUNTERS CONTAINER */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; text-align: center; }
+.stat-card { padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.stat-num { font-size: 20px; font-weight: bold; color: #1e293b; }
+.stat-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; }
+
+/* VISUAL COLOR BADGES STYLE */
+.task-item { background: #fff; padding: 12px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+.badge-pending { background: #fef3c7; color: #d97706; }
+.badge-progress { background: #e0f2fe; color: #0284c7; }
+.badge-completed { background: #dcfce7; color: #15803d; }
+</style>
+</head>
+<body>
+
+<h2>Task Application Management Panel</h2>
+
+<div id="authGroup">
+    <div id="registerPanel" class="myBox">
+        <h3>Create New User Account</h3>
+        <input type="text" id="regName" placeholder="Full Name">
+        <input type="email" id="regEmail" placeholder="Email (e.g. name@company.com)">
+        <input type="password" id="regPassword" placeholder="Password">
+        <select id="regRole">
+            <option value="Member">Team Member</option>
+            <option value="Admin">System Admin</option>
+        </select>
+        <button onclick="executeSignup()">Register User</button>
+    </div>
+
+    <div id="loginPanel" class="myBox">
+        <h3>User Login</h3>
+        <input type="email" id="loginEmail" placeholder="Enter Email">
+        <input type="password" id="loginPassword" placeholder="Enter Password">
+        <button onclick="executeLogin()">Log In</button>
+        <br>
+        <span class="link-text" onclick="togglePanels('forgot')">Forgot Password?</span>
+    </div>
+
+    <div id="forgotPanel" class="myBox hidden-element">
+        <h3>Account Recovery</h3>
+        <p style="font-size: 13px; color: #555;">Type your registered email to get password.</p>
+        <input type="email" id="forgotEmail" placeholder="Your Registered Email">
+        <button onclick="executePasswordReset()" style="background: #4b5563;">Recover Credential</button>
+        <br>
+        <span class="link-text" onclick="togglePanels('login')">Back to Login</span>
+    </div>
+</div>
+
+<div id="dashboardSection" class="workspace hidden-element">
+    <h3>User Dashboard Space</h3>
+    <p>Logged user: <span id="displayedUser" style="color: blue; font-weight: bold;"></span></p>
+    <p>Role tier: <span id="displayedRole"></span></p>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="cntTotal">0</div><div class="stat-lbl">Total Tasks</div></div>
+        <div class="stat-card" style="border-bottom: 3px solid #0284c7;"><div class="stat-num" id="cntProg">0</div><div class="stat-lbl">In Progress</div></div>
+        <div class="stat-card" style="border-bottom: 3px solid #15803d;"><div class="stat-num" id="cntComp">0</div><div class="stat-lbl">Completed</div></div>
+    </div>
+
+    <div id="adminCreateTaskPanel" class="hidden-element" style="background: #fef08a; padding: 15px; margin-bottom: 15px; border: 1px dashed #ca8a04; border-radius: 6px;">
+        <h4>Admin Feature: Allocate New Task Row</h4>
+        <input type="text" id="newTaskTitle" placeholder="Task Description Title">
+        <input type="email" id="newTaskAssignee" placeholder="Assignee User Email Address">
+        <button onclick="executeAdminCreateTask()" style="background: #ca8a04;">Publish Database Task</button>
+    </div>
+
+    <div style="margin-top: 15px; background: #fafafa; padding: 15px; border: 1px solid #ccc; border-radius: 6px;">
+        <h4 style="margin-top: 0;">Available System Work Tasks</h4>
+        <input type="text" id="taskSearchFilter" onkeyup="filterTasksRealtime()" placeholder="🔍 Type here to filter tasks instantly..." style="width:94%; background:#fff; padding:8px; margin-bottom:10px;">
+        <div id="tasksListViewContainer">No tasks visible.</div>
+    </div>
+
+    <div style="margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 6px;">
+        <h4>Change Task Status Row</h4>
+        <input type="text" id="testTaskId" placeholder="Task ID Number (Look at list above)">
+        <select id="testTaskStatus">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+        <button onclick="triggerStatusUpdate()" style="background: #1e293b;">Change Now</button>
+    </div>
+    <br>
+    <button onclick="executeLogout()" style="background: #ef4444;">Log Out</button>
+</div>
+
+<script>
+var SERVER_URL_PORT = 'http://localhost:5000';
+var rawLoadedTasksArray = []; 
+
+function togglePanels(view) {
+    if (view === 'forgot') {
+        document.getElementById('loginPanel').classList.add('hidden-element');
+        document.getElementById('forgotPanel').classList.remove('hidden-element');
+    } else {
+        document.getElementById('forgotPanel').classList.add('hidden-element');
+        document.getElementById('loginPanel').classList.remove('hidden-element');
+    }
+}
+
+function updateAnalyticsCounters(tasks) {
+     document.getElementById('cntTotal').innerText = tasks.length;
+     document.getElementById('cntProg').innerText = tasks.filter(t => t.status === 'In Progress').length;
+    document.getElementById('cntComp').innerText = tasks.filter(t => t.status === 'Completed').length;
+}
+
+function renderTasksToInterface(tasksList) {
+    var container = document.getElementById('tasksListViewContainer');
+    container.innerHTML = "";
+    if (tasksList.length > 0) {
+        for (var i = 0; i < tasksList.length; i++) {
+            var t = tasksList[i];
+            var badgeClass = "badge-pending";
+            if(t.status === "In Progress") badgeClass = "badge-progress";
+            if(t.status === "Completed") badgeClass = "badge-completed";
+
+            container.innerHTML += "<div class='task-item'><div><strong>ID: " + t.id + "</strong> - " + t.title + "<br><span style='font-size:12px; color:#64748b;'>Assigned: " + t.assigned_to + "</span></div><span class='badge " + badgeClass + "'>" + t.status + "</span></div>";
+        }
+    } else {
+        container.innerHTML = "<p style='color:red;'>No matching tasks found.</p>";
+    }
+}
+
+function filterTasksRealtime() {
+    var searchStr = document.getElementById('taskSearchFilter').value.toLowerCase();
+    var filtered = rawLoadedTasksArray.filter(function(t) {
+        return t.title.toLowerCase().indexOf(searchStr) !== -1 || t.status.toLowerCase().indexOf(searchStr) !== -1;
+    });
+    renderTasksToInterface(filtered);
+}
+
+function fetchAndDisplayTasks() {
+    var savedWebToken = localStorage.getItem('myUserToken');
+    fetch(SERVER_URL_PORT + '/api/tasks', {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + savedWebToken }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        if (payload.success) {
+            rawLoadedTasksArray = payload.tasks; 
+            renderTasksToInterface(rawLoadedTasksArray);
+            updateAnalyticsCounters(rawLoadedTasksArray);
+        }
+    });
+}
+
+function executeSignup() {
+    var user_name = document.getElementById('regName').value;
+    var user_email = document.getElementById('regEmail').value;
+    var user_pass = document.getElementById('regPassword').value;
+    var user_role = document.getElementById('regRole').value;
+
+    fetch(SERVER_URL_PORT + '/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: user_name, email: user_email, password: user_pass, role: user_role })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        alert(payload.message);
+    })
+    .catch(function(err) {
+        alert("Server error.");
+    });
+}
+
+function executeLogin() {
+    var input_email = document.getElementById('loginEmail').value;
+    var input_pass = document.getElementById('loginPassword').value;
+
+    fetch(SERVER_URL_PORT + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: input_email, password: input_pass })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        if (payload.success === true) {
+            localStorage.setItem('myUserToken', payload.token);
+            document.getElementById('authGroup').classList.add('hidden-element');
+            document.getElementById('dashboardSection').classList.remove('hidden-element');
+            document.getElementById('displayedUser').innerText = input_email;
+            document.getElementById('displayedRole').innerText = payload.role;
+            
+            if (payload.role === 'Admin') {
+                document.getElementById('adminCreateTaskPanel').classList.remove('hidden-element');
+            } else {
+                document.getElementById('adminCreateTaskPanel').classList.add('hidden-element');
+            }
+            
+            alert("Authorized!");
+            fetchAndDisplayTasks();
+        } else {
+            alert("Error: " + payload.message);
+        }
+    })
+    .catch(function(err) {
+        alert("Login route failed.");
+    });
+}
+
+function executeAdminCreateTask() {
+    var taskTitle = document.getElementById('newTaskTitle').value;
+    var taskAssignee = document.getElementById('newTaskAssignee').value;
+    var savedWebToken = localStorage.getItem('myUserToken');
+
+    fetch(SERVER_URL_PORT + '/api/tasks', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + savedWebToken
+        },
+        body: JSON.stringify({ title: taskTitle, assigned_to: taskAssignee })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        alert(payload.message);
+        fetchAndDisplayTasks();
+    });
+}
+
+function executePasswordReset() {
+    var emailInput = document.getElementById('forgotEmail').value;
+    if (!emailInput) {
+        alert("Please enter your email.");
+        return;
+    }
+    fetch(SERVER_URL_PORT + '/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        alert(payload.message);
+        if(payload.success === true) {
+            togglePanels('login');
+        }
+    })
+    .catch(function(err) {
+        alert("Recovery system offline.");
+    });
+}
+
+function triggerStatusUpdate() {
+    var numericalId = document.getElementById('testTaskId').value;
+    var chosenStatusStr = document.getElementById('testTaskStatus').value;
+    var savedWebToken = localStorage.getItem('myUserToken');
+    if (numericalId == "") {
+        alert("Enter a Task ID");
+        return;
+    }
+    var url = SERVER_URL_PORT + '/api/tasks/' + numericalId;
+    fetch(url, {
+        method: 'PUT',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + savedWebToken
+        },
+        body: JSON.stringify({ status: chosenStatusStr })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(payload) {
+        alert(payload.message);
+        fetchAndDisplayTasks();
+    })
+    .catch(function(err) {
+        alert("Error occurred on update.");
+    });
+}
+
+function executeLogout() {
+    localStorage.removeItem('myUserToken');
+    window.location.reload();
+}
+</script>
+</body>
+</html>
