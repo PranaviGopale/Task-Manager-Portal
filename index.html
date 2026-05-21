@@ -110,7 +110,9 @@ button:hover { background: #1d4ed8; }
 </div>
 
 <script>
-var SERVER_URL_PORT = 'http://localhost:5000';
+var SERVER_URL_PORT = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : window.location.origin;;
 var rawLoadedTasksArray = []; 
 
 function togglePanels(view) {
