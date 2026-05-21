@@ -182,8 +182,10 @@ app.get('/', (req, res) => {
 });
 
 
-const port = process.env.PORT || 3000;
+// Make sure it reads process.env.PORT dynamically!
+const port = process.env.PORT || 8080; 
 
+// CRITICAL: You must listen on host "0.0.0.0" so Railway's proxy can find it
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`);
 });
